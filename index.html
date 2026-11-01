@@ -1,0 +1,1098 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2A55CC">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Anime Director">
+<title>Anime Director</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Shippori+Mincho+B1:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: one phone column in the manner of an anime e-conte (storyboard) sheet: hairline blue rules, CUT / PICTURE / ACTION / TIME columns, and camera notation (FIX, T.U., T.B.) as the visual signature. */
+:root{
+  --paper:#F2F5F9; --card:#FFFFFF; --ink:#161B26; --muted:#566074; --rule:#C6D1E3;
+  --blue:#2A55CC; --on-blue:#FFFFFF; --tint:#E7EDF9; --red:#BE3A30; --green:#1E7A4C;
+  --f-display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",Georgia,serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#10141C; --card:#171D28; --ink:#E8ECF4; --muted:#9BA6BB; --rule:#2B3548;
+    --blue:#88A6FF; --on-blue:#0B1020; --tint:#1D2536; --red:#FF8A7E; --green:#6FD29B;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#10141C; --card:#171D28; --ink:#E8ECF4; --muted:#9BA6BB; --rule:#2B3548;
+  --blue:#88A6FF; --on-blue:#0B1020; --tint:#1D2536; --red:#FF8A7E; --green:#6FD29B;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--paper); color:var(--ink); font:400 15px/1.55 var(--f-body);
+  margin:0; padding-block:0 32px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top, 0px); background:var(--paper); z-index:10}
+.wrap{max-width:640px; margin-inline:auto}
+button,input,select,textarea{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--blue); outline-offset:2px}
+[hidden]{display:none!important}
+
+/* header */
+.top{position:sticky; top:env(safe-area-inset-top, 0px); z-index:11; background:var(--paper); border-bottom:1px solid var(--rule); padding-top:14px}
+.brand{display:flex; align-items:baseline; justify-content:space-between; gap:4px 12px; flex-wrap:wrap}
+h1{font:700 23px/1.1 var(--f-display); margin:0; letter-spacing:.01em}
+.sub{font:500 11px var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:0}
+.tabs{display:flex; gap:4px; margin-top:8px}
+.tabs button{flex:1; min-height:46px; background:none; border:0; border-bottom:3px solid transparent; font:700 14px var(--f-body); color:var(--muted); cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--blue)}
+.count{font:500 12px var(--f-mono); background:var(--tint); padding:1px 6px; border-radius:4px; margin-left:4px; color:var(--ink)}
+
+/* panels and fields */
+.panel{display:flex; flex-direction:column; gap:22px; padding-top:18px}
+.field{display:flex; flex-direction:column; gap:8px; min-width:0}
+.lbl{font:500 11px var(--f-mono); letter-spacing:.09em; text-transform:uppercase; color:var(--muted); display:flex; gap:8px; align-items:center}
+.hint{font-size:12.5px; color:var(--muted); margin:0}
+textarea,input[type="text"],input[type="password"],select{
+  width:100%; background:var(--card); border:1px solid var(--rule); border-radius:8px; padding:11px 12px; font-size:16px; min-height:46px;
+}
+textarea{resize:vertical; line-height:1.5}
+.tag{font:500 10.5px var(--f-mono); letter-spacing:.06em; text-transform:uppercase; border:1px solid var(--rule); border-radius:4px; padding:1px 6px; color:var(--muted); white-space:nowrap}
+.tag.warn{color:var(--red); border-color:var(--red)}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{min-height:42px; padding:8px 13px; background:var(--card); border:1px solid var(--rule); border-radius:6px; cursor:pointer; font-size:14px}
+.chip.mono{font:500 13px var(--f-mono)}
+.chip[aria-pressed="true"]{background:var(--blue); color:var(--on-blue); border-color:var(--blue)}
+.checks{display:flex; flex-direction:column; gap:2px}
+.check{display:flex; gap:10px; align-items:center; min-height:42px; font-size:14px}
+.check input{width:20px; height:20px; accent-color:var(--blue); flex:none}
+details.lockbox{border:1px solid var(--rule); border-radius:8px; background:var(--card)}
+details.lockbox summary{min-height:46px; display:flex; align-items:center; padding:0 12px; cursor:pointer; font-weight:500; font-size:14px}
+details.lockbox .inner{padding:0 12px 12px; display:flex; flex-direction:column; gap:8px}
+.imgrow{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+#imgPrev{height:64px; width:auto; max-width:50%; border:1px solid var(--rule); border-radius:4px; display:block}
+
+.btn{min-height:48px; padding:10px 16px; border-radius:8px; border:1px solid var(--blue); background:var(--blue); color:var(--on-blue); font-weight:700; font-size:15px; cursor:pointer}
+.btn:disabled{opacity:.5; cursor:not-allowed}
+.btn.ghost{background:transparent; color:var(--blue)}
+.btn.small{min-height:40px; padding:6px 12px; font-size:13px}
+.btn.danger{background:transparent; color:var(--red); border-color:var(--red)}
+.link{background:none; border:0; color:var(--blue); text-decoration:underline; cursor:pointer; min-height:40px; padding:0 4px}
+.banner{display:flex; gap:10px; align-items:center; justify-content:space-between; background:var(--tint); border:1px solid var(--rule); border-radius:8px; padding:8px 8px 8px 12px; font-size:14px}
+.banner p{margin:0; min-width:0; overflow-wrap:anywhere}
+.note{font-size:14px; color:var(--muted); margin:0}
+.note.err{color:var(--red)}
+
+/* result cards */
+.card{background:var(--card); border:1px solid var(--rule); border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:14px; min-width:0}
+.cardhead{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap}
+h2{font:700 17px/1.2 var(--f-display); margin:0}
+.pbox{display:flex; flex-direction:column; gap:6px; min-width:0}
+.pbox .plabel{font:500 11px var(--f-mono); letter-spacing:.09em; text-transform:uppercase; color:var(--blue)}
+.pbox.neg .plabel{color:var(--red)}
+pre{margin:0; white-space:pre-wrap; overflow-wrap:anywhere; font:400 13px/1.6 var(--f-mono); background:var(--paper); border:1px solid var(--rule); border-radius:6px; padding:10px; min-width:0}
+.row-actions{display:flex; gap:8px; flex-wrap:wrap}
+.saveform{display:flex; flex-direction:column; gap:10px; border-top:1px dashed var(--rule); padding-top:12px}
+.tip{margin:0; font-size:14px; border-left:3px solid var(--blue); padding:2px 0 2px 10px}
+.tip b{font:500 11px var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--blue); display:block}
+
+/* shot list: e-conte rows */
+.summary{display:flex; flex-direction:column; gap:10px; background:var(--card); border:1px solid var(--rule); border-radius:10px; padding:14px}
+.sumtop{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
+.sumtop .big{font:700 30px/1 var(--f-display); margin:0; font-variant-numeric:tabular-nums}
+.sumtop .small{margin:0; color:var(--muted); font-size:13px}
+.bar{height:8px; background:var(--tint); border-radius:4px; overflow:hidden}
+.bar span{display:block; height:100%; background:var(--blue); width:0}
+.counts{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; color:var(--muted)}
+.counts b{font:500 13px var(--f-mono); color:var(--ink); margin-left:4px}
+.colhead,.rowbtn{display:grid; grid-template-columns:46px 64px minmax(0,1fr) 34px; gap:10px; align-items:center}
+.colhead{font:500 10px var(--f-mono); letter-spacing:.1em; color:var(--muted); padding:0 2px}
+.colhead span:last-child{text-align:right}
+.group{display:flex; flex-direction:column; border-top:2px solid var(--ink)}
+.ghead{display:flex; justify-content:space-between; align-items:baseline; padding:8px 2px}
+h3{font:700 16px var(--f-display); margin:0}
+.gsec{font:500 12px var(--f-mono); color:var(--muted)}
+.shot{border-top:1px solid var(--rule)}
+.rowbtn{width:100%; background:none; border:0; text-align:left; padding:10px 2px; cursor:pointer; min-height:62px}
+.cut{font:700 18px var(--f-display); font-variant-numeric:tabular-nums}
+.frame{
+  display:grid; place-items:end start; width:64px; aspect-ratio:16/9; border:1.5px solid var(--ink); padding:2px 3px; font:500 9px/1 var(--f-mono); color:var(--ink);
+  background:
+    linear-gradient(var(--rule),var(--rule)) 33.3% 0 / 1px 100% no-repeat,
+    linear-gradient(var(--rule),var(--rule)) 66.6% 0 / 1px 100% no-repeat,
+    linear-gradient(var(--rule),var(--rule)) 0 33.3% / 100% 1px no-repeat,
+    linear-gradient(var(--rule),var(--rule)) 0 66.6% / 100% 1px no-repeat,
+    var(--card);
+}
+.what{display:flex; flex-direction:column; gap:3px; min-width:0}
+.what .t{font-size:14px; font-weight:500; overflow-wrap:anywhere}
+.what .m{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
+.pill{font:500 10.5px var(--f-mono); border:1px solid var(--rule); border-radius:4px; padding:1px 6px; color:var(--muted)}
+.pill.image{color:var(--blue); border-color:var(--blue)}
+.pill.video{background:var(--blue); color:var(--on-blue); border-color:var(--blue)}
+.pill.edit{background:var(--green); color:var(--paper); border-color:var(--green)}
+.mtxt{font-size:12px; color:var(--muted)}
+.time{font:500 13px var(--f-mono); text-align:right; font-variant-numeric:tabular-nums}
+.more{display:flex; flex-direction:column; gap:14px; padding:4px 2px 16px}
+
+#toast{
+  position:fixed; z-index:20; left:max(16px, env(safe-area-inset-left, 0px)); right:max(16px, env(safe-area-inset-right, 0px));
+  bottom:calc(16px + env(safe-area-inset-bottom, 0px)); max-width:420px; margin-inline:auto;
+  background:var(--ink); color:var(--paper); border-radius:8px; padding:12px 14px; font-size:14px; text-align:center;
+}
+.entries{display:flex; flex-direction:column; gap:12px}
+.entry{background:var(--card); border:1px solid var(--rule); border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px; min-width:0}
+.ehead{display:flex; justify-content:space-between; align-items:baseline; gap:6px 10px; flex-wrap:wrap}
+.enote{margin:0; font-size:14px}
+@media (prefers-reduced-motion: no-preference){ .bar span{transition:width .3s ease} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Anime Director</h1>
+      <p class="sub">Kael trailer / cut sheet</p>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Screens">
+      <button type="button" role="tab" id="tab-banao" data-tab="banao" aria-selected="true" aria-controls="panel-banao">Banao</button>
+      <button type="button" role="tab" id="tab-shots" data-tab="shots" aria-selected="false" aria-controls="panel-shots">Shots<span class="count" id="shotCount">0</span></button>
+      <button type="button" role="tab" id="tab-ilm" data-tab="ilm" aria-selected="false" aria-controls="panel-ilm">Ilm</button>
+    </nav>
+  </header>
+
+  <section class="panel" id="panel-banao" role="tabpanel" aria-labelledby="tab-banao">
+    <div class="banner" id="targetBanner" hidden>
+      <p id="targetText"></p>
+      <button type="button" class="link" id="targetCancel">Cancel</button>
+    </div>
+
+    <div class="field">
+      <label class="lbl" for="idea">Shot ka idea <span class="tag" id="exampleTag">misal</span></label>
+      <textarea id="idea" rows="3" spellcheck="false"></textarea>
+      <p class="hint">Template ke liye idea English mein likho. Gemini se banwao to Roman Urdu bhi chalega.</p>
+    </div>
+
+    <div class="field" id="imgField" hidden>
+      <span class="lbl">Shot ki image (optional)</span>
+      <div class="imgrow">
+        <button type="button" class="btn ghost small" id="pickImg">Image chuno</button>
+        <input type="file" id="imgInput" accept="image/*" hidden>
+        <img id="imgPrev" alt="Chuni hui image" hidden>
+        <button type="button" class="link" id="clearImg" hidden>Hatao</button>
+      </div>
+      <p class="hint">Image Gemini ko bheji jati hai. App image ko save nahi karta.</p>
+    </div>
+
+    <div class="field"><span class="lbl" id="l-type">Shot ki qism</span><div class="chips" id="g-type" role="group" aria-labelledby="l-type"></div></div>
+    <div class="field"><span class="lbl" id="l-angle">Camera angle</span><div class="chips" id="g-angle" role="group" aria-labelledby="l-angle"></div></div>
+    <div class="field">
+      <span class="lbl" id="l-move">Camera move</span>
+      <div class="chips" id="g-move" role="group" aria-labelledby="l-move"></div>
+      <p class="hint">FIX camera sthir. T.U. camera aage barhta hai. T.B. camera peeche hatta hai. Ye anime conte ki asli notation hai.</p>
+    </div>
+    <div class="field">
+      <span class="lbl" id="l-motion">Kitni harkat</span>
+      <div class="chips" id="g-motion" role="group" aria-labelledby="l-motion"></div>
+      <p class="hint">Free tools zyada harkat par chehra bigaad dete hain. Kam harkat chuno.</p>
+    </div>
+    <div class="field"><span class="lbl" id="l-fx">Effects</span><div class="chips" id="g-fx" role="group" aria-labelledby="l-fx"></div></div>
+    <div class="field"><span class="lbl" id="l-sec">Clip kitne second ka</span><div class="chips" id="g-sec" role="group" aria-labelledby="l-sec"></div></div>
+    <div class="field"><span class="lbl" id="l-tool">Video tool</span><div class="chips" id="g-tool" role="group" aria-labelledby="l-tool"></div></div>
+
+    <div class="field">
+      <span class="lbl">Pehle ke masle theek karo</span>
+      <div class="checks">
+        <label class="check" for="fxScarf"><input type="checkbox" id="fxScarf">Scarf sirf halka hile</label>
+        <label class="check" for="fxParallax"><input type="checkbox" id="fxParallax">Poora frame saath hile (zameen, aasman, darakht)</label>
+        <label class="check" for="fxSlow"><input type="checkbox" id="fxSlow">Tez aur ulti seedhi harkat nahi</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="lbl">Ilm se jodi hui cheezein <span class="count" id="libN">0</span></span>
+      <div id="libPicked"></div>
+      <button type="button" class="btn ghost small" id="openLib">Ilm kholo</button>
+    </div>
+
+    <details class="lockbox">
+      <summary>Kael ka style lock</summary>
+      <div class="inner">
+        <label class="lbl" for="lockText">Ye line har prompt mein judti hai</label>
+        <textarea id="lockText" rows="3" spellcheck="false"></textarea>
+        <button type="button" class="link" id="lockReset">Pehle jaisa karo</button>
+      </div>
+    </details>
+
+    <article class="card" id="cardT">
+      <div class="cardhead"><h2>Template prompt</h2><span class="tag">live, free</span></div>
+      <div id="tBody" style="display:contents"></div>
+    </article>
+
+    <details class="lockbox" id="gset">
+      <summary>Gemini key (free) <span class="tag" id="gstate" style="margin-left:8px">nahi lagi</span></summary>
+      <div class="inner">
+        <p class="hint">1. Browser mein aistudio.google.com/apikey kholo aur free key banao. 2. Yahan paste karke Save dabao. Key sirf is phone ke browser mein rehti hai, kisi ko mat dena. Free tier mein tumhare prompts aur images Google istemal kar sakta hai.</p>
+        <label class="lbl" for="gkey">API key</label>
+        <input type="password" id="gkey" autocomplete="off" spellcheck="false">
+        <label class="lbl" for="gmodel">Model</label>
+        <input type="text" id="gmodel" autocomplete="off" spellcheck="false">
+        <select id="gmodels" aria-label="Models ki list" hidden></select>
+        <div class="row-actions">
+          <button type="button" class="btn small" id="gsave">Save</button>
+          <button type="button" class="btn ghost small" id="glist">Models ki list</button>
+        </div>
+        <p class="note" id="gnote" hidden></p>
+      </div>
+    </details>
+
+    <div class="field">
+      <button type="button" class="btn" id="btnGemini" disabled>Gemini se banwao</button>
+      <p class="hint">Gemini shot ko dekh kar anime ke hisab se prompt likhta hai. Ye tumhari free Gemini key se chalta hai, limit lag sakti hai.</p>
+      <p class="note" id="brainNote" hidden></p>
+    </div>
+
+    <article class="card" id="cardC" hidden>
+      <div class="cardhead"><h2>Gemini ka prompt</h2><span class="tag" id="claudeTag">Gemini ka version</span></div>
+      <p class="note" id="claudeStatus" hidden></p>
+      <button type="button" class="btn ghost small" id="btnStop" hidden>Roko</button>
+      <div id="cBody" style="display:contents" hidden></div>
+    </article>
+  </section>
+
+  <section class="panel" id="panel-shots" role="tabpanel" aria-labelledby="tab-shots" hidden>
+    <div id="shotsBody" style="display:contents"></div>
+  </section>
+
+  <section class="panel" id="panel-ilm" role="tabpanel" aria-labelledby="tab-ilm" hidden>
+    <div class="field">
+      <label class="lbl" for="libSearch">Dhundo</label>
+      <input type="text" id="libSearch" placeholder="jaise: sword, fire, low angle, impact" autocomplete="off">
+      <p class="hint" id="libCount"></p>
+    </div>
+    <div class="chips" id="g-libcat" role="group" aria-label="Qism"></div>
+    <div class="entries" id="libList"></div>
+  </section>
+</div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const $ = (s, r) => (r || document).querySelector(s);
+function h(tag, attrs){
+  const el = document.createElement(tag);
+  if (attrs) Object.keys(attrs).forEach(k => { const v = attrs[k]; if (v === false || v == null) return; el.setAttribute(k, v === true ? "" : v); });
+  for (let i = 2; i < arguments.length; i++){ const c = arguments[i]; if (c == null || c === false) continue; el.append(c.nodeType ? c : document.createTextNode(String(c))); }
+  return el;
+}
+const CL = window.claude;
+
+/* ---------- vocabulary ---------- */
+const TYPES = [
+  {id:"walking", label:"Walking"}, {id:"closeup", label:"Close-up"}, {id:"action", label:"Action"},
+  {id:"wide", label:"Wide shot"}, {id:"emotion", label:"Emotion"}, {id:"pov", label:"POV"}
+];
+const ANGLES = [
+  {id:"low", label:"Low angle"}, {id:"eye", label:"Eye level"}, {id:"high", label:"High angle"},
+  {id:"side", label:"Side view"}, {id:"threeq", label:"3/4"}, {id:"front", label:"Front"}
+];
+const MOVES = [
+  {id:"fix", label:"FIX", mono:true}, {id:"tu", label:"T.U.", mono:true}, {id:"tb", label:"T.B.", mono:true},
+  {id:"pan", label:"PAN", mono:true}, {id:"tilt", label:"TILT", mono:true}
+];
+const MOTIONS = [
+  {id:"parts", label:"Sirf baal aur kapde"}, {id:"face", label:"Chehra aur hath"}, {id:"full", label:"Poora jism"}
+];
+const FXS = [
+  {id:"speed", label:"Speed lines"}, {id:"dust", label:"Dhool"}, {id:"wind", label:"Hawa"},
+  {id:"flash", label:"Flash"}, {id:"sparks", label:"Chingariyan"}, {id:"fire", label:"Aag ki roshni"}
+];
+const SECS = [3,5,8,10].map(n => ({id:n, label:n + "s"}));
+const TOOLS = [{id:"kling", label:"Kling"}, {id:"hailuo", label:"Hailuo"}, {id:"vidu", label:"Vidu"}];
+const PARTS = ["Hook","Khali haath","Girna","Jaagna","Montage","Title"];
+const STATUS = [
+  {id:"plan", label:"Plan"}, {id:"image", label:"Image ready"}, {id:"video", label:"Video ready"}, {id:"edit", label:"Edit ho gaya"}
+];
+const TARGET_SECONDS = 90;
+
+const TYPE_TXT = {
+  walking:"The character walks steadily with a natural, grounded walk cycle",
+  closeup:"Close-up framing, tight on the face, with small and precise movement",
+  action:"One single decisive action: a hold of about one second, then fast and clean motion",
+  wide:"Wide establishing framing with the character small in the environment",
+  emotion:"Emotional close-up where only the eyes, breathing and a tiny facial change move",
+  pov:"First-person point of view, the camera acts as the character's eyes"
+};
+const ANGLE_TXT = {low:"low angle", eye:"eye-level view", high:"high angle", side:"side view", threeq:"three-quarter angle", front:"front view"};
+const MOVE_TXT = {
+  fix:{abbr:"FIX", text:"static camera", hailuo:"[Static shot]"},
+  tu:{abbr:"T.U.", text:"slow push-in", hailuo:"[Push in]"},
+  tb:{abbr:"T.B.", text:"slow pull-back", hailuo:"[Pull out]"},
+  pan:{abbr:"PAN", text:"slow horizontal pan", hailuo:"[Pan right]"},
+  tilt:{abbr:"TILT", text:"slow vertical tilt", hailuo:"[Tilt up]"}
+};
+const MOTION_TXT = {
+  parts:"Only hair and clothing sway gently while the body and face stay almost still, limited animation like TV anime",
+  face:"Subtle movement of the face and hands only, the rest of the frame holds still",
+  full:"Full body motion, smooth and controlled, with no sudden changes of speed"
+};
+const MOTION_SHORT = {parts:"Only hair and clothes sway, rest stays still", face:"Only face and hands move subtly", full:"Smooth controlled full body motion"};
+const FX_TXT = {
+  speed:"speed lines", dust:"drifting dust", wind:"light wind in grass and hair",
+  flash:"a brief white impact flash", sparks:"small sparks", fire:"warm flickering fire glow"
+};
+const FIX_TXT = {
+  scarf:"The scarf sways only slightly, as in a normal walk, and never flies or whips.",
+  parallax:"The whole frame moves together: ground, trees and sky shift with correct parallax, and no layer stays frozen while another scrolls.",
+  slow:"No fast or chaotic motion; keep every movement controlled."
+};
+const DEFAULT_LOCK = "2D anime, TV anime texture, flat cel shading, clean linework, same character design as the reference image.";
+const NEG = "3D render, CGI, realistic skin, photorealistic, western cartoon, morphing face, extra limbs, changing outfit, flicker, text, watermark, blurry";
+const EXAMPLE_IDEA = "Kael walks along a dirt road across green grassland in soft evening light, with one or two small trees far away.";
+
+/* ---------- anime ilm: [category, id, name, note, prompt phrase] ---------- */
+const LIB_CATS = [
+  {id:"cam", label:"Camera angle", en:"Camera angles"}, {id:"mov", label:"Camera move", en:"Camera moves"},
+  {id:"tec", label:"Anime technique", en:"Anime techniques"}, {id:"atk", label:"Hamle", en:"Attacks"},
+  {id:"mag", label:"Jaadu", en:"Magic"}, {id:"wpn", label:"Hathiyar", en:"Weapons"},
+  {id:"act", label:"Harkat", en:"Character movement"}, {id:"mood", label:"Mahaul", en:"Atmosphere"},
+  {id:"era", label:"Zamana", en:"Era looks"}, {id:"edit", label:"Edit", en:"Editing"}
+];
+const LIB = [
+  ["cam","ews","Extreme wide / establishing","Bohat door se poora manzar. Jagah dikhane aur insan ko chhota dikhane ke liye.","extreme wide establishing shot, tiny figure in a vast landscape, large sky"],
+  ["cam","ws","Wide shot","Poora jism aur mahaul. Chalne ya khade hone ke shots ke liye.","wide shot showing the full body and surroundings"],
+  ["cam","ms","Medium shot","Kamar se upar. Baat cheet aur aam harkat ke liye.","medium shot from the waist up"],
+  ["cam","mcu","Medium close-up","Seene se upar. Jazbaat dikhane ka sab se aam angle.","medium close-up from the chest up"],
+  ["cam","cu","Close-up","Chehra bhara hua. Khaas jazbaat ke liye.","close-up on the face"],
+  ["cam","ecu","Extreme close-up (aankhen)","Sirf aankhein ya hont. Hairani, gussa ya faisle ka lamha.","extreme close-up on the eyes with light reflecting in the irises"],
+  ["cam","ots","Over the shoulder","Ek kirdar ke kandhe ke peeche se doosre ko dekhna.","over-the-shoulder shot, the foreground shoulder softly out of focus"],
+  ["cam","pov","POV","Kirdar ki apni aankh se. Hath ya hathiyar saamne nazar aata hai.","first-person point of view, the character's hands visible at the bottom of the frame"],
+  ["cam","low","Low angle","Neeche se upar. Kirdar taqatwar lagta hai.","low angle looking up, the character looks powerful against the sky"],
+  ["cam","high","High angle","Upar se neeche. Kirdar chhota ya kamzor lagta hai.","high angle looking down, the character looks small and vulnerable"],
+  ["cam","top","Top-down","Seedha upar se. Maidan ya zameen ka naqsha dikhane ke liye.","top-down bird's-eye view"],
+  ["cam","dutch","Tilted (Dutch) angle","Camera ek taraf jhuka hua. Bechaini ya khatra.","tilted dutch angle for tension"],
+  ["cam","worm","Worm's eye","Zameen ki satah se. Bohat bara aur dabdabe wala asar.","worm's-eye view from ground level, a towering figure"],
+  ["cam","prof","Profile (side view)","Seedha side se. Chalne aur sochne ke shots mein aam.","clean side profile view"],
+  ["cam","tq","3/4 view","Chehra thora ghuma hua. Anime mein sab se zyada istemal hota hai.","three-quarter view"],
+  ["cam","back","Peeche se (back view)","Kirdar door ja raha hai ya manzar ko dekh raha hai.","shot from behind, the character facing away toward the horizon"],
+  ["cam","two","Two-shot","Do kirdar ek frame mein. Rishta dikhane ke liye.","two-shot with both characters in frame"],
+  ["cam","insert","Insert shot","Kisi cheez ka tang shot, jaise hath, dastay ya zakhm.","insert shot of a detail, the hand gripping the sword hilt"],
+  ["cam","react","Reaction shot","Hamle ya khabar ke baad kirdar ka chehra.","reaction shot, a held close-up of the face"],
+  ["cam","sil","Silhouette","Kirdar sirf kali parchhai, peeche tez roshni.","backlit silhouette against a bright sky"],
+
+  ["mov","mfix","FIX (sthir camera)","Camera nahi hilta. Sab se mehfooz, AI mein sab se kam bigarta hai.","static locked-off camera"],
+  ["mov","pan","PAN","Camera side mein ghoomta hai. Manzar dikhane ke liye.","slow horizontal pan"],
+  ["mov","tilt","TILT","Camera upar ya neeche. Paon se chehre tak dikhana hero reveal kehlata hai.","slow tilt up from the boots to the face"],
+  ["mov","tu","T.U. (push-in)","Camera kirdar ki taraf barhta hai. Tension barhane ke liye.","slow push-in toward the character"],
+  ["mov","tb","T.B. (pull-back)","Camera peeche hatta hai. Akelapan ya raaz khulna.","slow pull-back revealing the surroundings"],
+  ["mov","follow","Follow shot","Camera kirdar ke saath saath chalta hai.","tracking shot moving alongside the character at walking speed"],
+  ["mov","orbit","Orbit","Camera kirdar ke gird ghoomta hai. Bara lamha ya power-up.","camera slowly orbits around the character"],
+  ["mov","crash","Crash zoom","Achanak tez zoom. Hairani ya mazaak mein.","sudden fast zoom in on the face"],
+  ["mov","para","Parallax","Aage aur peeche ka manzar alag raftar se hilte hain. Gehrai ka ehsas.","multiplane parallax, foreground and background layers move at different speeds"],
+  ["mov","shake","Camera shake","Takkar par camera hilta hai. AI se mushkil, CapCut mein behtar.","brief camera shake on impact"],
+  ["mov","rack","Rack focus","Focus aage se peeche badalta hai.","rack focus from the foreground object to the character"],
+  ["mov","whip","Whip pan","Bohat tez pan jis mein dhundla pan aata hai. Do shots ke beech.","fast whip pan with motion blur"],
+  ["mov","crane","Crane up","Camera seedha upar uthta hai. Bade manzar ka reveal.","crane shot rising up to reveal the whole landscape"],
+  ["mov","dz","Dolly zoom","Peeche hatte hue zoom in. Chakkar ya dar ka ehsas. Kam istemal hota hai.","dolly zoom, the background stretches while the subject stays the same size"],
+
+  ["tec","limited","Limited animation","Frame ka zyada hissa sthir, sirf zaroori cheez hilti hai. Anime ka bunyadi tareeka aur AI ke liye behtareen.","limited animation, most of the frame holds still and only the key part moves"],
+  ["tec","twos","On twos / threes","Har 2 ya 3 frame par nayi drawing. Isi se anime ki jhatke wali harkat aati hai.","animated on twos, crisp stepped motion like TV anime"],
+  ["tec","hold","Hold frame","Ek tasveer kuch der rukti hai. Tension aur zor dene ke liye.","a deliberate hold on a single pose before the next action"],
+  ["tec","impact","Impact frame","Takkar ke lamhe par 1 se 2 frame ki bohat gehri safed ya kali tasveer. AI se nahi aati, CapCut mein flash lagao.","single high-contrast impact frame, bold white lines on black"],
+  ["tec","smear","Smear frame","Tez harkat mein ek frame jisme cheez kheench jati hai. AI se aksar bigar jata hai.","smear frame stretching the blade along its swing arc"],
+  ["tec","speed","Speed lines","Harkat ki simt mein lakeerein.","speed lines streaking in the direction of motion"],
+  ["tec","focus","Focus lines","Kirdar ki taraf ya us se baahar lakeerein. Hairani ya hamle ka zor.","radial focus lines converging on the character"],
+  ["tec","sakuga","Sakuga burst","Kuch second ki bohat nafees aur behti hui animation. Fight ya tabdeeli ke liye bacha kar rakho.","a sakuga burst of fluid, detailed animation"],
+  ["tec","glow","Bloom / glow","Roshni ke gird chamak. Aaj kal ke TV anime ka khaas look.","soft bloom glow around bright light sources"],
+  ["tec","rim","Rim light","Kirdar ke kinare par roshni ki lakeer. Cheez peeche se alag dikhti hai.","strong rim light outlining the character from behind"],
+  ["tec","cel","Cel shading","Saaf kinare aur seedhi seedhi parchhaiyan, gradient nahi.","flat cel shading with hard-edged shadow shapes and clean linework"],
+  ["tec","ca","Chromatic aberration","Takkar par rang ke kinare alag ho jate hain.","slight chromatic aberration at the edges on impact"],
+  ["tec","paintbg","Painted background","Peeche ka manzar haath se bani painting jaisa, kirdar se zyada nafees.","detailed hand-painted background with soft cloud shading"],
+  ["tec","emote","Emotion marks","Pasina, gusse ki rag, hairani ke nishan. Mazahiya aur chhote shorts ke liye.","classic anime emotion marks such as a sweat drop"],
+
+  ["atk","slash","Talwar ka seedha war","Pehle thora peeche khenchna (wind-up), phir tez war, peeche chamakti lakeer.","short wind-up, then a fast horizontal slash leaving a bright arc trail"],
+  ["atk","chop","Oopar se war (overhead chop)","Talwar sar ke upar, phir zor se neeche. Wazan dikhta hai.","blade raised overhead, then a powerful downward chop"],
+  ["atk","thrust","Chhura bhonkna (thrust)","Seedha aage. Tez aur seedhi lakeer.","fast straight thrust with a streak line along the blade"],
+  ["atk","rising","Neeche se oopar war","Neeche se tirchha oopar. Dushman ko hawa mein uchalne ke liye.","rising diagonal slash from below"],
+  ["atk","iaido","Iaido (nikalte hi war)","Meyaan mein talwar, sakit, phir ek lamhe mein war. Dushman baad mein reaction deta hai.","stillness with the blade sheathed, then an instant draw cut with a single glint, the reaction comes a moment later"],
+  ["atk","parry","Rok aur sparks","Talwarein takrane par chingariyan aur peeche hatna.","blades clash, sparks burst, both fighters slide back"],
+  ["atk","lock","Talwaron ka phansna (blade lock)","Dono talwarein phansi hui, chehre qareeb, chingariyan.","blades locked together, sparks flying, faces close"],
+  ["atk","punch","Mukka","Wind-up, takkar ka lamha, shockwave ka daira, baal hawa mein.","wind-up, impact, a shockwave ring, hair blown back"],
+  ["atk","kick","Laat","Ghoomti hui laat, tez lakeer, dhool.","spinning kick with a curved motion trail and dust"],
+  ["atk","dash","Tez dour (dash)","Kirdar ek lamhe mein door pahunchta hai, peeche dhundli parchhaiyan.","instant dash leaving faint afterimages behind"],
+  ["atk","leap","Oonchi chhalang ka war","Oonchi chhalang, hawa mein ruka hua lamha, neeche girta war.","high leap, brief hang time, then a falling strike"],
+  ["atk","slam","Zameen par zor ka war","Zameen mein dararen, dhool ka daira, malba uchalta hai.","ground slam with radiating cracks, a dust ring and flying debris"],
+  ["atk","arrow","Teer chalana","Kamaan khinchna, saans rokna, chhodna, hawa mein lakeer.","bow drawn, a held breath, release, the arrow streaks with an air trail"],
+  ["atk","combo","Tez waron ka silsila","Alag alag angles se tez aamne saamne war, kuch impact frames.","rapid exchange of strikes cutting between angles"],
+  ["atk","delayed","Der se asar (delayed cut)","Dushman khada rehta hai, phir kat ki lakeer nazar aati hai aur dhamaka.","the enemy stands still, then a slash line appears across the body and bursts"],
+  ["atk","slowmo","Slow motion lamha","Takkar ke aas paas thora sa slow.","brief slow motion at the moment of impact"],
+  ["atk","charge","Taqat jama karna","Baal oopar, malba hawa mein, chamakta aura.","energy gathers, hair rises, debris floats upward, a glowing aura"],
+  ["atk","transform","Power-up / tabdeeli","Chamak, hawa se kapde urna, ek flash.","power-up glow, clothing whipping in the wind, a bright flash"],
+  ["atk","dodge","Bach nikalna","Zara sa jhukna, war guzar jata hai, baal ki lat kat jati hai.","a slight lean as the attack passes by, a strand of hair cut"],
+  ["atk","block","Dhaal ya talwar se rokna","Takkar, chingariyan, zameen par ghisatna.","blocking an attack, sparks, the character slides back"],
+
+  ["mag","fire","Aag ka jaadu","Layer wali shoalon ki zubanen, andar chamakta markaz, angare. Kael ka element.","layered hand-drawn flame tongues, a bright core, floating embers, flat cel colors of yellow, orange and red"],
+  ["mag","fireball","Aag ka gola","Banna, chhutna, peeche lakeer, takra kar dhuen ka daira.","a fireball forms, launches with a trail, then explodes in a ring of smoke"],
+  ["mag","firewave","Aag ki lehar","Zameen par phailti hui aag ki deewar.","a wave of fire sweeping across the ground"],
+  ["mag","flamelit","Chhoti si lau","Hatheli par chhoti lau, kamre mein roshni.","a small flame in the palm lighting the face and a dark room"],
+  ["mag","lightning","Bijli","Tez zigzag lakeerein, safed neeli, achanak flash.","jagged white-blue lightning bolts branching, with a brief screen flash"],
+  ["mag","windm","Hawa ka jaadu","Mudi hui hilal jaisi lakeerein, ghoomte patte.","curved crescent wind slashes with swirling leaves"],
+  ["mag","water","Paani ka jaadu","Behti hui mudi hui patiyan, boondein, chamak.","flowing curved ribbons of water with droplets and glints"],
+  ["mag","ice","Barf ka jaadu","Sheeshe jaise tukde banate hain, pala phailta hai.","ice crystal shards forming, frost spreading, glinting"],
+  ["mag","earth","Zameen ka jaadu","Patthar oopar uthte hain, dararen, dhool.","rocks rising from the ground, cracks and dust"],
+  ["mag","lightm","Roshni ka jaadu","Sunehri kirnen, narm chamak, oopar uthte zarre.","golden rays, soft glow and rising light particles"],
+  ["mag","dark","Andhere ka jaadu","Ghoomti kali banafshi taqat, lehrate tentacle, surkh aankhein. Demon lords ke liye.","swirling black and purple energy with writhing tendrils and glowing red eyes"],
+  ["mag","circle","Jaadui daira (magic circle)","Ghoomte hue nishan, roshni ke sutoon.","glowing magic circle with rotating geometric runes and pillars of light"],
+  ["mag","beam","Roshni ki beam","Gola jama hota hai, phir moti beam, peeche dhakka.","a charging orb then a thick beam with a bright core and a long light trail"],
+  ["mag","barrier","Hifazati deewar","Aadhi shaffaf gumbad, takkar par lehar.","a translucent dome barrier rippling at the point of impact"],
+  ["mag","heal","Shifa ka jaadu","Narm hari ya sunehri chamak, tairte zarre.","soft green and gold healing glow with floating particles"],
+  ["mag","portal","Darwaza / summon","Daira khulta hai, ghoomti taqat, andar se cheez nikalti hai.","a portal ring opens with swirling energy, a creature emerges"],
+  ["mag","sysw","System window","Neeli shaffaf screen jis par likha hota hai. Riku ki awaaz ke liye.","translucent blue holographic status window floating in the air"],
+  ["mag","aura","Kala dhuen aura","Gehra dhuen jo kirdar ke gird uthta hai.","dark smoke-like aura rising around the character"],
+
+  ["wpn","katana","Talwar","Chamak, wazan, harkat par lakeer.","a bright blade glint, a thin arc trail on the swing"],
+  ["wpn","bokken","Lakri ki talwar","Sust awaz, chingari nahi, lakdi ka thud.","dull wooden practice sword, no sparks, a soft thud on contact"],
+  ["wpn","shield","Dhaal","Rok kar dhaatu ki awaaz, sparks, peeche dhakka.","shield deflects the strike with a metallic ring and sparks"],
+  ["wpn","axe","Kulhari","Bhaari, ghoomne mein der, bara daira, zameen hilti hai.","heavy axe swing with a slow wind-up, a wide arc and a ground-shaking impact"],
+  ["wpn","spear","Neza","Lamba hamla, ghoomta hua, peeche lakeer.","long thrust with reach, a spinning spear with a trailing line"],
+  ["wpn","bow","Kamaan","Khinchna, nishana, chhodna.","drawing the bow, aiming, releasing"],
+  ["wpn","dagger","Khanjar","Tez chhote war, ulta pakar.","fast short slashes with a reverse grip"],
+  ["wpn","hammer","Hathoda","Bohat bhaari, gol ghoomta, zordaar.","massive hammer swung in a heavy arc, the ground shakes"],
+  ["wpn","dual","Do talwarein","Bari bari tez war.","dual blades striking in fast alternating slashes"],
+  ["wpn","great","Bari talwar (greatsword)","Do hathon se, dheemi bari lakeerein.","two-handed greatsword in slow, heavy arcs"],
+  ["wpn","staff","Asa / jaadugar ki chhadi","Sira chamakta hai, gol harkat.","glowing staff tip tracing a circle"],
+
+  ["act","walk","Chalna","Seedha chalna, sar halka sa hilta, bazu jhoolte hain, baal aur kapde peeche se aate hain.","steady walk cycle with a slight head bob, arms swinging, hair and clothes following through"],
+  ["act","run","Bhaagna","Aage ki taraf jhuka, dhool, speed lines.","running leaned forward with dust kicking up"],
+  ["act","idle","Saans lena (idle)","Seena halka uthta hai, palak jhapakti hai, baal hilte hain.","subtle breathing, blinking and gentle hair sway"],
+  ["act","overlap","Baal aur kapde ka peeche rehna","Jism ruk jaye to baal aur kapde thori der baad ruktay hain.","overlapping action, hair and cloth lag behind then settle"],
+  ["act","anticip","Wind-up phir war","War se pehle chhota sa peeche khenchna, phir tez harkat, phir sukoon.","a short anticipation before the fast action, then a settle"],
+  ["act","eyeshine","Aankhon ki chamak","Aankhon mein roshni ka nishan, pupil halka hilta hai.","eyes catch the light, tiny pupil shifts"],
+  ["act","talk","Bolna","Munh sirf khulna aur band hona, baqi kam.","simple open and closed mouth flaps while the rest stays still"],
+  ["act","eyesfirst","Pehle aankhein phir sar","Pehle aankh mudti hai, phir sar.","the eyes turn first, then the head follows"],
+  ["act","fall","Girna","Aza dheele, baal oopar, thora slow.","limbs loose, hair floating up, slightly slowed"],
+  ["act","collapse","Dher hona","Ghutne mudte hain, wazan neeche, camera saath girta hai.","knees buckle, weight drops, the camera sinks with the body"],
+  ["act","tears","Aansoo","Aankh kaanpti hai, aansoo banta hai aur girta hai.","eyes tremble, a tear forms and falls"],
+  ["act","fist","Mutthi bhinchna","Ungliyan dheere se mutthi banti hain, kasi hui rukawat.","fingers slowly curl into a fist, a tense hold"],
+  ["act","scarfm","Scarf / cape hawa mein","Halka sa hilna, udna nahi.","scarf sways gently in the wind"],
+  ["act","jump","Chhalang aur utarna","Dab kar, uchhalna, hawa mein rukna, utar kar dabna.","crouch, launch, hang time, then a landing crouch"],
+  ["act","sway","Khade rehna","Wazan ek paon se doosre par.","slight weight shift while standing"],
+  ["act","herowind","Hero pose hawa mein","Kirdar sthir, baal aur kapde hawa mein.","heroic stillness with hair and clothes blowing in the wind"],
+
+  ["mood","golden","Sunehri shaam","Narm sunehri roshni, lambi parchhaiyan.","golden hour light with long soft shadows"],
+  ["mood","moon","Chandni raat","Neeli roshni, gehri parchhaiyan.","cold blue moonlight with deep shadows"],
+  ["mood","rain","Baarish","Girti boondein, geeli zameen par chamak.","falling rain with reflections on wet ground"],
+  ["mood","fog","Dhund","Halka dhundla manzar, door ki cheezein phiki.","light mist with distant objects faded"],
+  ["mood","embers","Angare / dhool","Hawa mein tairte zarre.","floating embers and dust particles in the air"],
+  ["mood","leaves","Girte patte","Patte hawa mein.","drifting falling leaves"],
+  ["mood","lamp","Chiragh ki roshni","Andheray kamre mein garam roshni chehre par.","warm lamp light on the face in a dark wooden room"],
+  ["mood","cold","Udaas rang","Phike, kam rang, badli wala aasman.","desaturated cold palette under an overcast sky"],
+  ["mood","rays","Roshni ki kirnen","Badal ya darakht se kirnen.","god rays through clouds"],
+  ["mood","nightst","Raat ki sadak","Gehri neeli raat, door ek garam roshni.","dark blue night street lit by a single warm lamp"],
+
+  ["era","e60","1960s ka andaaz","Tetsuwan Atom (Astro Boy, 1963) se limited animation TV anime ka tareeka ban gayi.","1960s early TV anime look, simple bold lines, limited animation"],
+  ["era","e80","1980s hath se bana cel","Gundam (1979) aur 80s ke anime mein haath ki painting wala gehra rang.","1980s hand-painted cel anime look, rich saturated colors, slight film grain"],
+  ["era","e90","1990s ka andaaz","Evangelion (1995) aur Cowboy Bebop (1998) jaise: film jaisa daana, gehre saaye.","1990s cel anime look, film grain, deep shadows"],
+  ["era","e00","2000s digital","Cel ki jagah digital rang aaya, saaf aur sapaat.","2000s digitally colored anime, clean sharp lines"],
+  ["era","e20","Aaj ka TV anime","Digital compositing, chamak, tez camera. Solo Leveling jaisa.","modern TV anime look with digital compositing, glow effects and dynamic lighting"],
+  ["era","ghibli","Narm hath ka manzar","Studio Ghibli 1985 se. Narm rang, haath ki painting, qudrati harkat.","soft hand-painted watercolor backgrounds and gentle natural movement"],
+
+  ["edit","flashcut","Flash cut","CapCut: Effects mein Flash lagao, 2 se 4 frame ka. Takkar ke lamhe par.",""],
+  ["edit","shakeedit","Screen shake","CapCut: Effects mein Shake, takkar ke lamhe par thori der ke liye.",""],
+  ["edit","ramp","Speed ramp","CapCut: Speed, phir Curve. Tez se slow phir tez. Hamle ke aas paas.",""],
+  ["edit","stillmove","Still par camera move","CapCut: tasveer par keyframe se zoom ya pan. Video credit bachata hai.",""],
+  ["edit","smashcut","Smash cut to black","Achanak kala screen aur aawaz bhi band. Trailer ke bade lamhe ke baad.",""],
+  ["edit","montage","Tez montage","Har shot 0.3 se 0.6 second. Trailer ke aakhir mein.",""],
+  ["edit","silence","Khamoshi ka lamha","Barhte shor ke baad 1 second sannata, phir dhamaka. Trailer ki jaan.",""],
+  ["edit","matchcut","Match cut","Ek shot ki shakal doosre shot se mel khati ho.",""],
+  ["edit","freeze","Freeze frame","Aakhri tasveer ruk jati hai, phir naam aata hai.",""],
+  ["edit","title","Title card","Naam ek lamhe ke liye saaf dikhe, saath mein sound effect.",""],
+  ["edit","bankedit","Bank (shot dobara)","Wohi shot dobara kaam mein lao, flip, zoom ya rang badal kar. Credits bachte hain.",""]
+].map(a => ({cat:a[0], id:a[1], name:a[2], note:a[3], phrase:a[4]}));
+const LIB_BY_ID = {}; LIB.forEach(e => { LIB_BY_ID[e.id] = e; });
+
+/* ---------- state ---------- */
+const S = {
+  type:"walking", angle:"side", move:"fix", motion:"full", fx:new Set(), seconds:5, tool:"kling",
+  fixes:{scarf:true, parallax:true, slow:true}, lock:DEFAULT_LOCK,
+  targetId:null, img:null, imgUrl:null, lastPart:"Hook",
+  claude:{state:"idle"}, shots:[], loading:true, loadNote:"", loadErr:"", open:null, confirmDel:null
+};
+let SAMPLE = null, IMG_OK = false, CTL = null, COL = null;
+S.lib = new Set(); S.libCat = "all"; S.libQ = "";
+
+function loadPrefs(){
+  try{
+    const p = JSON.parse(localStorage.getItem("ad-prefs") || "{}");
+    if (p.tool && TOOLS.some(t => t.id === p.tool)) S.tool = p.tool;
+    if (typeof p.lock === "string" && p.lock.trim()) S.lock = p.lock;
+    if (p.fixes && typeof p.fixes === "object") Object.keys(S.fixes).forEach(k => { if (typeof p.fixes[k] === "boolean") S.fixes[k] = p.fixes[k]; });
+  }catch(e){}
+}
+function savePrefs(){
+  try{ localStorage.setItem("ad-prefs", JSON.stringify({tool:S.tool, lock:S.lock, fixes:S.fixes})); }catch(e){}
+}
+
+/* ---------- helpers ---------- */
+let toastTimer;
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2800);
+}
+function copyText(text, btn){
+  const done = () => {
+    const old = btn.dataset.label || btn.textContent; btn.dataset.label = old;
+    btn.textContent = "Copy ho gaya"; setTimeout(() => { btn.textContent = old; }, 1400);
+  };
+  const fail = () => toast("Copy nahi ho saka. Text ko dabakar select karo.");
+  const fallback = () => {
+    try{
+      const ta = h("textarea", {id:"copyTmp", "aria-hidden":"true"}); ta.value = text;
+      ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.append(ta); ta.select();
+      const ok = document.execCommand("copy"); ta.remove(); if (ok) done(); else fail();
+    }catch(e){ fail(); }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+}
+function copyBtn(label, getText){
+  const b = h("button", {type:"button", class:"btn ghost small"}, label);
+  b.addEventListener("click", () => copyText(getText(), b));
+  return b;
+}
+function sentence(t){ t = (t || "").trim().replace(/\s+/g, " "); if (!t) return ""; return /[.!?]$/.test(t) ? t : t + "."; }
+function capital(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
+function labelOf(list, id){ const x = list.find(i => i.id === id); return x ? x.label : ""; }
+function pad(n){ return String(n).padStart(2, "0"); }
+
+/* ---------- chip groups ---------- */
+function renderGroup(el, items, isOn, pick){
+  el.textContent = "";
+  items.forEach(it => {
+    const b = h("button", {type:"button", class:"chip" + (it.mono ? " mono" : ""), "aria-pressed":String(isOn(it.id))}, it.label);
+    b.addEventListener("click", () => pick(it.id));
+    el.append(b);
+  });
+}
+function renderBuilder(){
+  renderGroup($("#g-type"), TYPES, id => S.type === id, id => { S.type = id; changed(); renderBuilder(); });
+  renderGroup($("#g-angle"), ANGLES, id => S.angle === id, id => { S.angle = id; changed(); renderBuilder(); });
+  renderGroup($("#g-move"), MOVES, id => S.move === id, id => { S.move = id; changed(); renderBuilder(); });
+  renderGroup($("#g-motion"), MOTIONS, id => S.motion === id, id => { S.motion = id; changed(); renderBuilder(); });
+  renderGroup($("#g-fx"), FXS, id => S.fx.has(id), id => { if (S.fx.has(id)) S.fx.delete(id); else S.fx.add(id); changed(); renderBuilder(); });
+  renderGroup($("#g-sec"), SECS, id => S.seconds === id, id => { S.seconds = id; changed(); renderBuilder(); });
+  renderGroup($("#g-tool"), TOOLS, id => S.tool === id, id => { S.tool = id; changed(); renderBuilder(); });
+}
+
+/* ---------- template prompt ---------- */
+function buildTemplate(){
+  const idea = $("#idea").value, mv = MOVE_TXT[S.move];
+  const fx = [...S.fx].map(k => FX_TXT[k]);
+  const fxLine = fx.length ? "Effects: " + fx.join(", ") + "." : "";
+  const fixes = [];
+  if (S.fixes.scarf) fixes.push(FIX_TXT.scarf);
+  if (S.fixes.parallax) fixes.push(FIX_TXT.parallax);
+  if (S.fixes.slow) fixes.push(FIX_TXT.slow);
+  const lock = sentence(S.lock);
+  const tech = libPhrases();
+  const techLine = tech.length ? "Techniques: " + tech.join("; ") + "." : "";
+  let prompt;
+  if (S.tool === "hailuo"){
+    prompt = [mv.hailuo, sentence(idea), sentence(TYPE_TXT[S.type]), sentence(capital(ANGLE_TXT[S.angle])), sentence(MOTION_TXT[S.motion]), fxLine, techLine, fixes.join(" "), lock];
+  } else if (S.tool === "vidu"){
+    prompt = [sentence(idea), sentence(capital(ANGLE_TXT[S.angle]) + ", " + mv.text), sentence(MOTION_SHORT[S.motion]), fx.length ? sentence(capital(fx.join(", "))) : "", techLine, lock];
+  } else {
+    prompt = [sentence(TYPE_TXT[S.type]), sentence(capital(ANGLE_TXT[S.angle]) + ", " + mv.text), sentence(idea), sentence(MOTION_TXT[S.motion]), fxLine, techLine, fixes.join(" "), lock, "Clip length about " + S.seconds + " seconds."];
+  }
+  return {prompt: prompt.filter(Boolean).join(" "), negative: NEG};
+}
+
+/* ---------- Gemini brain ---------- */
+function brainInput(){
+  const idea = $("#idea").value.trim();
+  const notes = {
+    kling:"Kling: one fluent descriptive paragraph of at most 130 words. Subject motion first, then camera, then style. A separate negative prompt field exists.",
+    hailuo:"Hailuo: begin with one bracketed camera command such as [Push in], [Pull out], [Pan left], [Pan right], [Tilt up] or [Static shot], then a short concrete description. At most 90 words.",
+    vidu:"Vidu: one compact descriptive paragraph of at most 90 words with concrete verbs and no filler."
+  };
+  const fx = [...S.fx].map(k => FX_TXT[k]);
+  const fixes = [];
+  if (S.fixes.scarf) fixes.push(FIX_TXT.scarf);
+  if (S.fixes.parallax) fixes.push(FIX_TXT.parallax);
+  if (S.fixes.slow) fixes.push(FIX_TXT.slow);
+  const hasImg = !!(S.img && IMG_OK);
+  return [
+    "You are a senior anime director and key animator. A solo creator who cannot draw is making a trailer for his own anime with AI image-to-video tools, and your prompt is the only instruction the video model receives.",
+    "",
+    "Write ONE prompt for " + labelOf(TOOLS, S.tool) + ". " + notes[S.tool],
+    "",
+    "The shot:",
+    "- Idea (it may be in Roman Urdu; understand it and answer in English): " + (idea || "none given, infer it from the choices below"),
+    "- Shot type: " + labelOf(TYPES, S.type),
+    "- Camera angle: " + ANGLE_TXT[S.angle],
+    "- Camera move: " + MOVE_TXT[S.move].abbr + " (anime conte notation: FIX = static, T.U. = track up / push-in, T.B. = track back / pull-out)",
+    "- Motion amount: " + MOTION_TXT[S.motion],
+    "- Effects: " + (fx.length ? fx.join(", ") : "none"),
+    "- Clip length: " + S.seconds + " seconds",
+    "- Style lock to carry into the prompt: " + S.lock,
+    "- Known problems to prevent: " + (fixes.length ? fixes.join(" ") : "none"),
+    "- Chosen techniques (work every one of them into the prompt): " + (libPhrases().length ? libPhrases().join("; ") : "none"),
+    "- Anime technique vocabulary you may also use where it helps (names only): " + libVocab(),
+    "",
+    hasImg
+      ? "An image is attached and is the first frame of the clip. Do not describe the character's looks again; describe only motion, camera, timing and effects that suit that frame. If the image contradicts the choices above, follow the image and say so in tip."
+      : "No image is attached, so name the subject plainly from the idea.",
+    "",
+    "Anime craft rules: prefer limited animation (hold most of the frame still and move only what carries the shot), use at most one main action per clip, avoid fast or chaotic motion, keep the 2D flat-shaded look and never drift into 3D or realism.",
+    "",
+    'Reply with only a JSON object: {"prompt": string, "negative": string, "tip": string}. "negative" is a comma-separated negative prompt. "tip" is one short sentence in Roman Urdu naming the biggest risk in this shot and how to avoid it. No Markdown.'
+  ].join("\n");
+}
+/* ---------- Gemini brain (free key, runs in the browser) ---------- */
+const G = {
+  key(){ try{ return localStorage.getItem("ad-gkey") || ""; }catch(e){ return ""; } },
+  model(){ try{ return localStorage.getItem("ad-gmodel") || "gemini-2.5-flash"; }catch(e){ return "gemini-2.5-flash"; } },
+  save(k, m){ try{ localStorage.setItem("ad-gkey", k); localStorage.setItem("ad-gmodel", m); }catch(e){} }
+};
+const GBASE = "https://generativelanguage.googleapis.com/v1beta/";
+function gerr(code, message, text){ return {code:code, message:message, text:text}; }
+async function gfetch(path, opts){
+  let r;
+  try{ r = await fetch(GBASE + path, opts); }
+  catch(e){ if (e && e.name === "AbortError") throw gerr("cancelled", "cancelled"); throw gerr("network", "network"); }
+  let body = null; try{ body = await r.json(); }catch(e){}
+  if (!r.ok){
+    const m = (body && body.error && body.error.message) || "";
+    let code = "upstream_error";
+    if (r.status === 429) code = "rate_limited";
+    else if (r.status === 404) code = "model";
+    else if (r.status === 401 || r.status === 403 || /api key/i.test(m)) code = "not_granted";
+    else if (r.status === 400) code = "invalid_request";
+    throw gerr(code, m || ("HTTP " + r.status));
+  }
+  return body;
+}
+function blobToJpeg(blob){
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(blob), img = new Image();
+    img.onload = () => {
+      const sc = Math.min(1, 1280 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(img.width * sc)); c.height = Math.max(1, Math.round(img.height * sc));
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      res(c.toDataURL("image/jpeg", 0.85).split(",")[1]);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(gerr("image_rejected", "image")); };
+    img.src = url;
+  });
+}
+async function geminiJson(input, opts){
+  opts = opts || {};
+  const parts = [{text:input}];
+  if (opts.images) parts.push({inline_data:{mime_type:"image/jpeg", data:await blobToJpeg(opts.images)}});
+  const body = await gfetch("models/" + encodeURIComponent(G.model()) + ":generateContent", {
+    method:"POST", signal:opts.signal,
+    headers:{"Content-Type":"application/json", "x-goog-api-key":G.key()},
+    body:JSON.stringify({contents:[{role:"user", parts:parts}], generationConfig:{responseMimeType:"application/json", temperature:0.7}})
+  });
+  const cand = body && body.candidates && body.candidates[0];
+  const text = cand && cand.content && cand.content.parts ? cand.content.parts.map(p => p.text || "").join("") : "";
+  if (!text.trim()) throw gerr("empty_completion", "empty");
+  try{ return JSON.parse(text); }catch(e){
+    const a = text.indexOf("{"), b = text.lastIndexOf("}");
+    if (a >= 0 && b > a){ try{ return JSON.parse(text.slice(a, b + 1)); }catch(e2){} }
+    throw gerr("invalid_json", "json", text);
+  }
+}
+function sampleErr(e){
+  const c = e && e.code;
+  if (c === "not_granted") return "Key qabool nahi hui. Gemini key sahi paste ki hai?";
+  if (c === "rate_limited") return "Free limit lag gayi. Thori der baad dobara dabao.";
+  if (c === "model") return "Ye model nahi mila. Models ki list dabao aur doosra chuno.";
+  if (c === "network") return "Net nahi chal raha ya Google tak pahunch nahi aaya.";
+  if (c === "image_rejected") return "Ye image qabool nahi hui. Doosri image chuno.";
+  if (c === "invalid_json" || c === "empty_completion") return "Jawab samajh nahi aaya. Dobara dabao.";
+  return "Jawab nahi aaya. Dobara koshish karo.";
+}
+async function askGemini(){
+  if (!SAMPLE || S.claude.state === "busy") return;
+  CTL = new AbortController();
+  S.claude = {state:"busy"}; renderGemini();
+  try{
+    const opts = {signal:CTL.signal, cache:false, modelTier:"default"};
+    if (S.img && IMG_OK) opts.images = S.img;
+    const out = await SAMPLE.json(brainInput(), opts);
+    if (!out || typeof out.prompt !== "string" || !out.prompt.trim()) throw {code:"invalid_json"};
+    S.claude = {state:"done", prompt:out.prompt.trim(), negative:String(out.negative || NEG).trim(), tip:String(out.tip || "").trim(), stale:false};
+  }catch(e){
+    if (e && e.code === "cancelled") S.claude = {state:"idle"};
+    else S.claude = {state:"error", err:sampleErr(e)};
+  }
+  renderGemini();
+}
+
+/* ---------- result cards ---------- */
+function pbox(label, pre, neg){ return h("div", {class:"pbox" + (neg ? " neg" : "")}, h("span", {class:"plabel"}, label), pre); }
+function shotMeta(){ return {type:S.type, angle:S.angle, move:S.move, tool:S.tool, seconds:S.seconds, idea:$("#idea").value.trim(), lib:[...S.lib]}; }
+
+const saveBtns = [];
+function saveArea(prefix, getData){
+  const btn = h("button", {type:"button", class:"btn"}, "Shot list mein daalo");
+  const partSel = h("select", {id:"part" + prefix}, ...PARTS.map(p => h("option", {value:p}, p)));
+  const titleIn = h("input", {type:"text", id:"title" + prefix, maxlength:"80", autocomplete:"off"});
+  const form = h("div", {class:"saveform", hidden:true},
+    h("label", {class:"lbl", for:"part" + prefix}, "Trailer ka hissa"), partSel,
+    h("label", {class:"lbl", for:"title" + prefix}, "Shot ka naam"), titleIn);
+  const go = h("button", {type:"button", class:"btn small"}, "Save");
+  const cancel = h("button", {type:"button", class:"btn ghost small"}, "Cancel");
+  form.append(h("div", {class:"row-actions"}, go, cancel));
+  btn.addEventListener("click", () => {
+    const data = getData(); if (!data.prompt) return;
+    if (S.targetId){ attachToTarget(data); return; }
+    const idea = $("#idea").value.trim();
+    titleIn.value = titleIn.value || idea.slice(0, 48);
+    partSel.value = S.lastPart; form.hidden = !form.hidden;
+  });
+  cancel.addEventListener("click", () => { form.hidden = true; });
+  go.addEventListener("click", () => {
+    const data = getData(); const title = titleIn.value.trim() || "Naya shot";
+    S.lastPart = partSel.value; form.hidden = true; titleIn.value = "";
+    let cutNo = 0;
+    enqueue(async () => {
+      cutNo = nextCut();
+      await writeSet("c" + String(cutNo).padStart(3, "0"), Object.assign({cut:cutNo, part:partSel.value, title, status:"plan"}, shotMeta(), data));
+    }, () => "C-" + pad(cutNo) + " shot list mein gaya");
+  });
+  saveBtns.push(btn);
+  return h("div", {style:"display:contents"}, h("div", {class:"row-actions"}, btn), form);
+}
+function refreshSaveLabels(){
+  const s = S.shots.find(x => x.id === S.targetId);
+  saveBtns.forEach(b => { b.textContent = S.targetId ? "C-" + pad(s ? s.cut : 0) + " mein daalo" : "Shot list mein daalo"; });
+}
+
+const T = {pre:h("pre", {id:"preT"}), neg:h("pre", {id:"negT"})};
+$("#tBody").append(
+  pbox("Prompt", T.pre), pbox("Negative prompt", T.neg, true),
+  h("div", {class:"row-actions"}, copyBtn("Prompt copy", () => T.pre.textContent), copyBtn("Negative copy", () => T.neg.textContent)),
+  saveArea("T", () => ({prompt:T.pre.textContent, negative:T.neg.textContent}))
+);
+const C = {pre:h("pre", {id:"preC"}), neg:h("pre", {id:"negC"}), tip:h("span", {}), tipWrap:h("p", {class:"tip"})};
+C.tipWrap.append(h("b", {}, "Gemini ki salah"), C.tip);
+$("#cBody").append(
+  pbox("Prompt", C.pre), pbox("Negative prompt", C.neg, true), C.tipWrap,
+  h("div", {class:"row-actions"}, copyBtn("Prompt copy", () => C.pre.textContent), copyBtn("Negative copy", () => C.neg.textContent)),
+  saveArea("C", () => ({prompt:C.pre.textContent, negative:C.neg.textContent}))
+);
+
+function renderTemplate(){ const t = buildTemplate(); T.pre.textContent = t.prompt; T.neg.textContent = t.negative; }
+function renderGemini(){
+  const c = S.claude;
+  $("#cardC").hidden = c.state === "idle";
+  const st = $("#claudeStatus");
+  st.hidden = !(c.state === "busy" || c.state === "error");
+  st.textContent = c.state === "busy" ? "Gemini soch raha hai. Thora intezar karo." : (c.err || "");
+  st.className = "note" + (c.state === "error" ? " err" : "");
+  $("#btnStop").hidden = c.state !== "busy";
+  $("#cBody").hidden = c.state !== "done";
+  if (c.state === "done"){ C.pre.textContent = c.prompt; C.neg.textContent = c.negative; C.tip.textContent = c.tip; C.tipWrap.hidden = !c.tip; }
+  const tag = $("#claudeTag");
+  tag.textContent = c.state === "done" && c.stale ? "settings badal gayi, dobara banwao" : "Gemini ka version";
+  tag.className = "tag" + (c.state === "done" && c.stale ? " warn" : "");
+  $("#btnGemini").disabled = !SAMPLE || c.state === "busy";
+}
+function changed(){
+  renderTemplate(); savePrefs();
+  if (S.claude.state === "done" && !S.claude.stale){ S.claude.stale = true; renderGemini(); }
+}
+
+/* ---------- builder wiring ---------- */
+function setTarget(id){
+  S.targetId = id;
+  const s = S.shots.find(x => x.id === id);
+  $("#targetBanner").hidden = !id;
+  if (id) $("#targetText").textContent = "C-" + pad(s ? s.cut : 0) + " ke liye bana rahe ho" + (s ? ": " + s.title : "");
+  refreshSaveLabels();
+}
+function attachToTarget(data){
+  const id = S.targetId, s = S.shots.find(x => x.id === id); if (!id) return;
+  const patch = Object.assign({}, shotMeta(), data);
+  setTarget(null);
+  enqueue(() => writePatch(id, patch), () => "C-" + pad(s ? s.cut : 0) + " mein prompt daal diya");
+  go("shots");
+}
+function openInBuilder(s){
+  setTarget(s.id);
+  if (TYPES.some(x => x.id === s.type)) S.type = s.type;
+  if (ANGLES.some(x => x.id === s.angle)) S.angle = s.angle;
+  if (MOVES.some(x => x.id === s.move)) S.move = s.move;
+  if (TOOLS.some(x => x.id === s.tool)) S.tool = s.tool;
+  if (SECS.some(x => x.id === s.seconds)) S.seconds = s.seconds;
+  S.lib = new Set(Array.isArray(s.lib) ? s.lib.filter(id => LIB_BY_ID[id]) : []); renderLibPicked(); renderLib();
+  $("#idea").value = s.idea || s.title || ""; $("#exampleTag").hidden = true;
+  S.claude = {state:"idle"}; renderGemini(); renderBuilder(); changed(); go("banao"); window.scrollTo(0, 0);
+}
+$("#idea").addEventListener("input", () => { $("#exampleTag").hidden = true; changed(); });
+$("#lockText").addEventListener("input", e => { S.lock = e.target.value.trim() ? e.target.value : DEFAULT_LOCK; changed(); });
+$("#lockReset").addEventListener("click", () => { S.lock = DEFAULT_LOCK; $("#lockText").value = DEFAULT_LOCK; changed(); });
+[["#fxScarf","scarf"],["#fxParallax","parallax"],["#fxSlow","slow"]].forEach(p => {
+  $(p[0]).addEventListener("change", e => { S.fixes[p[1]] = e.target.checked; changed(); });
+});
+$("#btnGemini").addEventListener("click", askGemini);
+$("#btnStop").addEventListener("click", () => { if (CTL) CTL.abort(); });
+$("#targetCancel").addEventListener("click", () => setTarget(null));
+$("#pickImg").addEventListener("click", () => $("#imgInput").click());
+$("#imgInput").addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  if (S.imgUrl) URL.revokeObjectURL(S.imgUrl);
+  S.img = f; S.imgUrl = URL.createObjectURL(f);
+  $("#imgPrev").src = S.imgUrl; $("#imgPrev").hidden = false; $("#clearImg").hidden = false;
+});
+$("#clearImg").addEventListener("click", () => {
+  if (S.imgUrl) URL.revokeObjectURL(S.imgUrl);
+  S.img = null; S.imgUrl = null; $("#imgInput").value = ""; $("#imgPrev").hidden = true; $("#clearImg").hidden = true;
+});
+
+/* ---------- tabs ---------- */
+function tabFromHash(){ return ({"#shots":"shots", "#ilm":"ilm"})[location.hash] || "banao"; }
+function showTab(t){
+  ["banao","shots","ilm"].forEach(n => { $("#tab-" + n).setAttribute("aria-selected", String(n === t)); $("#panel-" + n).hidden = n !== t; });
+}
+function go(t){ if (location.hash === "#" + t) showTab(t); else location.hash = "#" + t; }
+window.addEventListener("hashchange", () => showTab(tabFromHash()));
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => go(b.dataset.tab)));
+
+/* ---------- shot store (db when available, this browser otherwise) ---------- */
+let chain = Promise.resolve();
+function dbErr(e){
+  const c = e && e.code;
+  if (c === "quota_exceeded") return "Shot list bhar gayi hai.";
+  if (c === "invalid_argument") return "Is view mein shot list badalne ki ijazat nahi.";
+  return "Save nahi ho saka. Dobara koshish karo.";
+}
+function enqueue(fn, ok){
+  chain = chain.then(fn).then(() => { if (ok) toast(typeof ok === "function" ? ok() : ok); }).catch(e => toast(dbErr(e)));
+  return chain;
+}
+function byCut(a, b){ return (a.cut || 0) - (b.cut || 0); }
+function nextCut(){ return S.shots.reduce((m, s) => Math.max(m, s.cut || 0), 0) + 1; }
+function localSave(){ try{ localStorage.setItem("ad-shots", JSON.stringify(S.shots)); }catch(e){} }
+function writeSet(id, data){
+  if (COL) return COL.doc(id).set(data);
+  S.shots = S.shots.filter(x => x.id !== id).concat([Object.assign({id}, data)]).sort(byCut); localSave(); renderShots(); return Promise.resolve();
+}
+function writePatch(id, patch){
+  if (COL) return COL.doc(id).update(patch);
+  S.shots = S.shots.map(x => x.id === id ? Object.assign({}, x, patch) : x); localSave(); renderShots(); return Promise.resolve();
+}
+function writeDel(id){
+  if (COL) return COL.doc(id).delete();
+  S.shots = S.shots.filter(x => x.id !== id); localSave(); renderShots(); return Promise.resolve();
+}
+
+/* ---------- shot list screen ---------- */
+function segButtons(items, current, onPick){
+  const wrap = h("div", {class:"chips"});
+  items.forEach(it => {
+    const b = h("button", {type:"button", class:"chip", "aria-pressed":String(current === it.id)}, it.label);
+    b.addEventListener("click", () => onPick(it.id)); wrap.append(b);
+  });
+  return wrap;
+}
+function rowEl(s){
+  const open = S.open === s.id, mv = MOVE_TXT[s.move];
+  const metaBits = [labelOf(TYPES, s.type), labelOf(ANGLES, s.angle), s.tool ? labelOf(TOOLS, s.tool) : ""].filter(Boolean).join(" / ");
+  const btn = h("button", {type:"button", class:"rowbtn", "aria-expanded":String(open)},
+    h("span", {class:"cut"}, "C-" + pad(s.cut || 0)),
+    h("span", {class:"frame", "aria-hidden":"true"}, h("span", {}, mv ? mv.abbr : "-")),
+    h("span", {class:"what"},
+      h("span", {class:"t"}, s.title || "Naam nahi"),
+      h("span", {class:"m"}, h("span", {class:"pill " + (s.status || "plan")}, labelOf(STATUS, s.status || "plan")), metaBits ? h("span", {class:"mtxt"}, metaBits) : null)),
+    h("span", {class:"time"}, (s.seconds || 0) + "s"));
+  btn.addEventListener("click", () => { S.open = open ? null : s.id; S.confirmDel = null; renderShots(); });
+  const li = h("li", {class:"shot", style:"list-style:none"}, btn);
+  if (open){
+    const more = h("div", {class:"more"});
+    if (s.prompt){
+      const pp = h("pre", {}, s.prompt);
+      more.append(pbox("Prompt", pp), h("div", {class:"row-actions"}, copyBtn("Prompt copy", () => s.prompt), s.negative ? copyBtn("Negative copy", () => s.negative) : null));
+    } else {
+      more.append(h("p", {class:"note"}, "Is shot ka prompt abhi nahi bana."));
+    }
+    more.append(h("div", {class:"field"}, h("span", {class:"lbl"}, "Status"),
+      segButtons(STATUS, s.status || "plan", id => enqueue(() => writePatch(s.id, {status:id})))));
+    more.append(h("div", {class:"field"}, h("span", {class:"lbl"}, "Kitne second"),
+      segButtons(SECS, s.seconds, id => enqueue(() => writePatch(s.id, {seconds:id})))));
+    const build = h("button", {type:"button", class:"btn small"}, s.prompt ? "Prompt dobara banao" : "Is shot ka prompt banao");
+    build.addEventListener("click", () => openInBuilder(s));
+    const del = h("button", {type:"button", class:"btn danger small"}, S.confirmDel === s.id ? "Pakka hataao?" : "Hataao");
+    del.addEventListener("click", () => {
+      if (S.confirmDel !== s.id){ S.confirmDel = s.id; renderShots(); return; }
+      S.confirmDel = null; S.open = null; enqueue(() => writeDel(s.id), "Shot hata diya");
+    });
+    more.append(h("div", {class:"row-actions"}, build, del));
+    li.append(more);
+  }
+  return li;
+}
+function renderShots(){
+  const root = $("#shotsBody"); root.textContent = "";
+  $("#shotCount").textContent = String(S.shots.length);
+  if (S.loading){ root.append(h("p", {class:"note"}, S.loadNote || "Shot list load ho rahi hai.")); return; }
+  if (S.loadErr){ root.append(h("p", {class:"note err"}, S.loadErr)); }
+  if (!S.shots.length){
+    root.append(h("p", {class:"note"}, "Abhi koi shot nahi. Banao tab mein prompt banao aur Shot list mein daalo dabao. Yahan har shot ka status aur trailer ka total time dikhega."));
+    return;
+  }
+  const total = S.shots.reduce((m, s) => m + (s.seconds || 0), 0);
+  const bar = h("div", {class:"bar", role:"img", "aria-label":total + " second, target " + TARGET_SECONDS}, h("span"));
+  bar.firstChild.style.width = Math.min(100, Math.round(total / TARGET_SECONDS * 100)) + "%";
+  const counts = h("div", {class:"counts"});
+  STATUS.forEach(st => counts.append(h("span", {}, st.label, h("b", {}, S.shots.filter(s => (s.status || "plan") === st.id).length))));
+  root.append(h("div", {class:"summary"},
+    h("div", {class:"sumtop"}, h("p", {class:"big"}, total + " s"), h("p", {class:"small"}, "ab tak, trailer target " + TARGET_SECONDS + " s")), bar, counts));
+  root.append(h("div", {class:"colhead", "aria-hidden":"true"}, h("span", {}, "CUT"), h("span", {}, "PICTURE"), h("span", {}, "ACTION"), h("span", {}, "TIME")));
+  const known = PARTS.concat(S.shots.map(s => s.part).filter(p => p && PARTS.indexOf(p) < 0).filter((p, i, a) => a.indexOf(p) === i));
+  known.forEach(p => {
+    const list = S.shots.filter(s => (s.part || "Hook") === p); if (!list.length) return;
+    const secs = list.reduce((m, s) => m + (s.seconds || 0), 0);
+    const ul = h("ul", {style:"margin:0;padding:0"});
+    list.forEach(s => ul.append(rowEl(s)));
+    root.append(h("section", {class:"group"}, h("div", {class:"ghead"}, h("h3", {}, p), h("span", {class:"gsec"}, secs + "s")), ul));
+  });
+}
+
+/* ---------- ilm screen ---------- */
+function libPhrases(){ return [...S.lib].map(id => LIB_BY_ID[id]).filter(Boolean).map(e => e.phrase).filter(Boolean); }
+function libVocab(){
+  return LIB_CATS.filter(c => c.id !== "edit").map(c => c.en + ": " + LIB.filter(e => e.cat === c.id).map(e => e.name).join(", ")).join(". ");
+}
+function renderLibPicked(){
+  const root = $("#libPicked"); root.textContent = "";
+  const ids = [...S.lib].filter(id => LIB_BY_ID[id]);
+  $("#libN").textContent = String(ids.length);
+  if (!ids.length){ root.append(h("p", {class:"hint"}, "Abhi kuch nahi chuna. Ilm mein se camera, hamle, jaadu wagera jodo.")); return; }
+  const wrap = h("div", {class:"chips"});
+  ids.forEach(id => {
+    const e = LIB_BY_ID[id];
+    const b = h("button", {type:"button", class:"chip", "aria-pressed":"true", "aria-label":e.name + " hatao"}, e.name + " ×");
+    b.addEventListener("click", () => { S.lib.delete(id); renderLibPicked(); renderLib(); changed(); });
+    wrap.append(b);
+  });
+  const clr = h("button", {type:"button", class:"link"}, "Sab hatao");
+  clr.addEventListener("click", () => { S.lib.clear(); renderLibPicked(); renderLib(); changed(); });
+  root.append(wrap, clr);
+}
+function libCard(e){
+  const on = S.lib.has(e.id);
+  const card = h("article", {class:"entry"},
+    h("div", {class:"ehead"}, h("h3", {}, e.name), h("span", {class:"tag"}, labelOf(LIB_CATS, e.cat))),
+    h("p", {class:"enote"}, e.note),
+    e.phrase ? h("pre", {}, e.phrase) : null);
+  if (e.phrase){
+    const add = h("button", {type:"button", class:"btn small" + (on ? " ghost" : ""), "aria-pressed":String(on)}, on ? "Prompt se hatao" : "Prompt mein jodo");
+    add.addEventListener("click", () => {
+      if (S.lib.has(e.id)) S.lib.delete(e.id); else S.lib.add(e.id);
+      renderLib(); renderLibPicked(); changed();
+      toast(S.lib.has(e.id) ? e.name + " prompt mein jud gaya" : e.name + " hata diya");
+    });
+    card.append(h("div", {class:"row-actions"}, add, copyBtn("Phrase copy", () => e.phrase)));
+  } else {
+    card.append(h("p", {class:"hint"}, "Ye video prompt ke liye nahi, edit ka nuskha hai."));
+  }
+  return card;
+}
+function renderLib(){
+  renderGroup($("#g-libcat"), [{id:"all", label:"Sab"}].concat(LIB_CATS), id => S.libCat === id, id => { S.libCat = id; renderLib(); });
+  const q = S.libQ.trim().toLowerCase();
+  const list = LIB.filter(e => (S.libCat === "all" || e.cat === S.libCat) && (!q || (e.name + " " + e.note + " " + e.phrase).toLowerCase().indexOf(q) >= 0));
+  const root = $("#libList"); root.textContent = "";
+  $("#libCount").textContent = list.length + " cheezein";
+  if (!list.length){ root.append(h("p", {class:"note"}, "Kuch nahi mila. Doosra lafz try karo.")); return; }
+  list.forEach(e => root.append(libCard(e)));
+}
+$("#libSearch").addEventListener("input", e => { S.libQ = e.target.value; renderLib(); });
+$("#openLib").addEventListener("click", () => go("ilm"));
+
+/* ---------- boot ---------- */
+function applyKey(){
+  const k = G.key();
+  SAMPLE = k ? {json:geminiJson} : null;
+  IMG_OK = !!k;
+  $("#imgField").hidden = !IMG_OK;
+  $("#gstate").textContent = k ? "lagi hui" : "nahi lagi";
+  const bn = $("#brainNote");
+  bn.textContent = "Gemini key lagao to AI se banwana chalega. Abhi template mode chal raha hai.";
+  bn.hidden = !!k;
+  renderGemini();
+}
+function initSample(){
+  $("#gkey").value = G.key(); $("#gmodel").value = G.model(); applyKey();
+  $("#gsave").addEventListener("click", () => {
+    const k = $("#gkey").value.trim();
+    G.save(k, $("#gmodel").value.trim() || "gemini-2.5-flash"); applyKey();
+    toast(k ? "Key save ho gayi" : "Key hata di");
+  });
+  $("#gmodels").addEventListener("change", e => { if (e.target.value) $("#gmodel").value = e.target.value; });
+  $("#glist").addEventListener("click", async () => {
+    const note = $("#gnote"), k = $("#gkey").value.trim() || G.key();
+    note.hidden = false; note.className = "note";
+    if (!k){ note.textContent = "Pehle key paste karo."; return; }
+    note.textContent = "List aa rahi hai.";
+    try{
+      const body = await gfetch("models?pageSize=200", {headers:{"x-goog-api-key":k}});
+      const names = ((body && body.models) || []).filter(m => (m.supportedGenerationMethods || []).indexOf("generateContent") >= 0 && /^models\/gemini/.test(m.name)).map(m => m.name.replace("models/", ""));
+      const sel = $("#gmodels"); sel.textContent = "";
+      sel.append(h("option", {value:""}, "Model chuno"));
+      names.forEach(n => sel.append(h("option", {value:n}, n)));
+      sel.hidden = !names.length;
+      note.textContent = names.length ? names.length + " models mile. Ek chuno, phir Save dabao." : "Koi model nahi mila.";
+    }catch(e){ note.className = "note err"; note.textContent = sampleErr(e); }
+  });
+}
+async function initStore(){
+  let db = null;
+  try{ db = CL && CL.use ? await CL.use("db") : null; }catch(e){ db = null; }
+  if (!db){
+    const SEED = [{"id": "c001", "cut": 1, "part": "Hook", "title": "Kael hatheli par chhoti lau dekhta hai", "status": "image", "type": "emotion", "angle": "threeq", "move": "fix", "seconds": 3, "idea": "Kael astonished, looking at a small flame in his palm, in a dark wooden room", "lib": []}, {"id": "c002", "cut": 2, "part": "Khali haath", "title": "Sadak par chalna (wide)", "status": "video", "type": "walking", "angle": "side", "move": "fix", "seconds": 3, "idea": "Kael walks along a road across green grassland, side view, camera far away", "lib": []}, {"id": "c003", "cut": 3, "part": "Khali haath", "title": "Chalna (low angle close-up)", "status": "video", "type": "closeup", "angle": "low", "move": "fix", "seconds": 3, "idea": "Low-angle close-up of Kael walking", "lib": []}, {"id": "c004", "cut": 4, "part": "Khali haath", "title": "Lakri ki talwar, side chop", "status": "edit", "type": "action", "angle": "side", "move": "fix", "seconds": 3, "idea": "Kael practices with a wooden sword, side-view chop at sunrise", "lib": []}, {"id": "c005", "cut": 5, "part": "Khali haath", "title": "Pehle shakhs ka chop (first-person)", "status": "edit", "type": "pov", "angle": "eye", "move": "fix", "seconds": 3, "idea": "First-person chop, arms raised then the sword pointing down", "lib": []}, {"id": "c006", "cut": 6, "part": "Khali haath", "title": "Chhaalon wali khali hatheli (POV)", "status": "edit", "type": "pov", "angle": "eye", "move": "fix", "seconds": 3, "idea": "POV of his empty blistered palm", "lib": []}, {"id": "c007", "cut": 7, "part": "Khali haath", "title": "Thaka hua chehra close-up", "status": "edit", "type": "closeup", "angle": "front", "move": "fix", "seconds": 3, "idea": "Close-up of Kael's tired face", "lib": []}, {"id": "c008", "cut": 8, "part": "Girna", "title": "Daku scene", "status": "plan", "type": "wide", "angle": "side", "move": "fix", "seconds": 3, "idea": "The thugs scene on the night street", "lib": []}, {"id": "c009", "cut": 9, "part": "Girna", "title": "Kael girta hai", "status": "plan", "type": "action", "angle": "side", "move": "fix", "seconds": 3, "idea": "Kael collapses after being stabbed", "lib": []}, {"id": "c010", "cut": 10, "part": "Jaagna", "title": "Behnein aur ghar", "status": "plan", "type": "emotion", "angle": "eye", "move": "fix", "seconds": 3, "idea": "The sisters beside Kael at home", "lib": []}, {"id": "c011", "cut": 11, "part": "Jaagna", "title": "Jaagna aur Riku ki awaaz", "status": "plan", "type": "closeup", "angle": "eye", "move": "tu", "seconds": 3, "idea": "Kael awakens, the system voice begins", "lib": []}, {"id": "c012", "cut": 12, "part": "Montage", "title": "Tez montage", "status": "plan", "type": "action", "angle": "low", "move": "fix", "seconds": 3, "idea": "Fast montage of fire and sword shots", "lib": []}, {"id": "c013", "cut": 13, "part": "Title", "title": "Title card", "status": "plan", "type": "wide", "angle": "eye", "move": "fix", "seconds": 3, "idea": "Title card", "lib": []}];
+    try{ const raw = localStorage.getItem("ad-shots"); if (raw === null){ S.shots = SEED.slice(); localSave(); } else { const v = JSON.parse(raw); S.shots = Array.isArray(v) ? v.sort(byCut) : []; } }catch(e){ S.shots = SEED.slice(); }
+    S.loading = false; renderShots(); refreshSaveLabels(); return;
+  }
+  COL = db.collection("shots");
+  const timer = setTimeout(() => { if (S.loading){ S.loadNote = "Shot list abhi nahi mil rahi. Net check karo."; renderShots(); } }, 10000);
+  COL.orderBy("cut").onSnapshot(snap => {
+    clearTimeout(timer);
+    S.shots = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
+    S.loading = false; S.loadErr = "";
+    renderShots(); refreshSaveLabels();
+  }, err => {
+    clearTimeout(timer); S.loading = false;
+    S.loadErr = "Shot list nahi mil saki (" + ((err && err.code) || "error") + ").";
+    renderShots();
+  });
+}
+
+loadPrefs();
+$("#idea").value = EXAMPLE_IDEA;
+$("#lockText").value = S.lock;
+$("#fxScarf").checked = S.fixes.scarf; $("#fxParallax").checked = S.fixes.parallax; $("#fxSlow").checked = S.fixes.slow;
+renderBuilder(); renderTemplate(); renderGemini(); renderShots(); renderLib(); renderLibPicked(); showTab(tabFromHash());
+initSample(); initStore();
+})();
+/* install + offline: only on a real https page */
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)){
+  window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });
+}
+
+</script>
+</body>
+</html>
